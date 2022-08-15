@@ -11,11 +11,13 @@ namespace jsonparser {
         : mstrFile("")
         , mstrText("")
         , mstrSpace("    ")
+        , mbInArray(false)
         {}
         json(string _param)
         : mstrFile(_param)
         , mstrText("")
         , mstrSpace("    ")
+        , mbInArray(false)
         {}
 
         // 데이터 멤버 mstrFile 값 반환.
@@ -46,13 +48,13 @@ namespace jsonparser {
         void ResolveSpace();
 
         template <typename T>
-        void Serialize(const string&, T);
+        void Serialize(const string&, const T&);
+
+        // template <typename T>
+        // void Serialize(const string&, T*);
 
         template <typename T, size_t N>
         void Serialize(const string&, const T (&arr)[N]);
-
-        template <typename T>
-        void Serialize(const string&, T*);
 
         void SerializeObjectStart(const string&);
         void SerializeObjectEnd(const string&);
@@ -63,6 +65,7 @@ namespace jsonparser {
         string mstrFile; // json 파일 경로를 갖는 데이터 멤버.
         string mstrText; // json 파일에 작성할 실제 내용을 갖는 데이터 멤버.
         string mstrSpace; // 현재 들여쓰기 상태를 갖는 데이터 멤버.
+        bool mbInArray;
     };
 
     // Read 테스트를 위한 메인 함수.
