@@ -5,28 +5,9 @@
 #include "Json.h"
 #include "Log.h"
 
-#include "DataType.h"
-
 using namespace std;
 
 namespace jsonparser {
-    // 열거형 클래스 eDatatype 데이터 타입을 구분할 때 사용.
-    enum class eDataType {
-        ePointer,
-        eString,
-        eElse
-    };
-
-    template <typename T>
-    eDataType GetDataType(T _param)
-    {
-        eDataType result;
-
-        result = eDataType::eElse;
-
-        return result;
-    }
-
     void json::AddText(const string& _text)
     {
         mstrText = mstrText + _text;
@@ -43,10 +24,10 @@ namespace jsonparser {
     }
 
     template <typename T>
-    void json::Serialize(const string& _name, T _data)
+    void json::Serialize(const string& _name, const T& _data)
     {
         log_debug("Basic Function Called");
-        
+
         string strData;
         strData = to_string(_data);
         
@@ -71,21 +52,21 @@ namespace jsonparser {
         SetText(strText);
     }
 
+    // template <typename T>
+    // void json::Serialize(const string& _name, T* _data)
+    // {
+    //     log_debug("pointer Function Called");
+    //     log_warn("Serializing pointer is not allowed.");
+    // }
+
     template <typename T, size_t N>
-    void json::Serialize(const string&, const T (&arr)[N])
+    void json::Serialize(const string& _name, const T (&arr)[N])
     {
         for (int i = 0; i < N; i++) {
-            log_debug("{}", arr[i]);
+            Serialize(_name, arr[i]);
         }
         
         // log_debug("int: {}", (void*)_data);
-    }
-
-    template <typename T>
-    void json::Serialize(const string& _name, T* _data)
-    {
-        log_debug("pointer Function Called");
-        log_warn("Serializing pointer is not allowed.");
     }
 
     void json::SerializeObjectStart(const string& _name)
@@ -181,18 +162,12 @@ namespace jsonparser {
     {
         // log_debug("Write의 기능 테스트를 위한 main 함수입니다.");
 
-        // json file;
+        json file;
 
-        // int myInt = 10;
-        // int* myPointer = &myInt;
-        // float myFloat = 0.5f;
-        // myClass myObject;
+        int myArray[5] = {0, 1, 2, 3, 4};
 
-        // file.Serialize("myInt", myInt);
-        // file.Serialize("myPointer", *myPointer);
-        // file.Serialize("myFloat", myFloat);
-        // myObject.SerializeObject("myObject", &file);
+        file.Serialize("myArray", myArray);
 
-        // file.Write();
+        file.Write();
     }
 }
