@@ -46,7 +46,6 @@ add_executable(
     ${srcPath}/Json_Read.cpp
     ${srcPath}/Json_Write.cpp
     ${srcPath}/Log.cpp
-    ${srcPath}/DataType.hpp
     ${srcPath}/main.cpp
 )
 
