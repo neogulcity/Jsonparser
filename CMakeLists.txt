@@ -1,3 +1,5 @@
+set(unitTest true)
+
 # Miminum required version of CMake.
 cmake_minimum_required(VERSION 3.11)
 
@@ -14,14 +16,16 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Set variable 'srcPath' to ./src
+# Set variable 'srcPath' to ./src and 'testPath' to ./test
 set(srcPath ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(testPath ${CMAKE_CURRENT_SOURCE_DIR}/test)
 
-# Find spdlog.
+# Find spdlog and Catch2.
 find_package(spdlog CONFIG REQUIRED)
+find_package(Catch2 CONFIG REQUIRED)
 
 # Checking build type
 if (CMAKE_BUILD_TYPE STREQUAL "")
@@ -40,14 +44,24 @@ else ()
 endif ()
 
 # Make library file.
-add_executable(
-    ${PROJECT_NAME}
-    ${srcPath}/Json.cpp
-    ${srcPath}/Json_Read.cpp
-    ${srcPath}/Json_Write.cpp
-    ${srcPath}/Log.cpp
-    ${srcPath}/main.cpp
-)
+message(STATUS "Unit Testing set to '${unitTest}'")
+if (${unitTest})
+    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "_TEST")
+    add_executable(
+        ${PROJECT_NAME}
+        ${srcPath}/jsonparser.cpp
+        ${srcPath}/Log.cpp
+        ${srcPath}/json.cpp
+        ${testPath}/json_UnitTest.cpp
+    )
+else ()
+    add_executable(
+        ${PROJECT_NAME}
+        ${srcPath}/jsonparser.cpp
+        ${srcPath}/Log.cpp
+        ${srcPath}/json.cpp
+    )
+endif ()
 
 # Set library include directories
 target_include_directories(
@@ -56,11 +70,12 @@ target_include_directories(
     ${srcPath}
 )
 
-# Link spdlog.
+# Link spdlog and Catch2.
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 	spdlog::spdlog_header_only
+    Catch2::Catch2
 )
 
 # Compile options.
