@@ -1,5 +1,7 @@
 {
     "cmake.configureOnOpen": true,
+    "editor.formatOnSave": true,
+    "clang-format.executable": "${workspaceRoot}/.clang-format",
     "files.associations": {
         "iosfwd": "cpp",
         "__bit_reference": "cpp",
@@ -69,6 +71,9 @@
         "unordered_map": "cpp",
         "utility": "cpp",
         "vector": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "__tree": "cpp",
+        "map": "cpp",
+        "variant": "cpp"
     }
 }
