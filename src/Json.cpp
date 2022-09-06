@@ -10,36 +10,50 @@ std::ostream& operator<<(std::ostream& _out, const json& _json) {
 json::operator std::string() {
     if (this->m_dataVec.size() == 0) return "";
 
-    if (this->m_dataVec.size() == 1) {
-        this->m_result += "{\n";
+    this->m_result = "";
 
-        auto data = this->m_dataVec.begin();
-        this->m_result += WritePath(std::get<0>(*data));
-        this->m_result += WriteData(*this->m_dataVec.begin());
-        DelComma(&this->m_result);
-        this->m_result += ClosePath(std::get<0>(*data));
-        DelComma(&this->m_result);
-        this->m_result += "\n}";
+    this->m_result += "{\n";
 
-        return this->m_result;
+    auto dataVec = this->m_dataVec;
+    std::string curPath = _ROOT_;
+    while (curPath != "") {
+        for (auto iter = dataVec.begin(); iter != dataVec.end(); iter++) {
+            auto type = GetPathType(curPath, iter->GetPath());
+            std::pair<uint32_t, uint32_t> depth;
+            switch (type) {
+                case ePathType::Lower:
+                    depth = GetWriteDepth(curPath, iter->GetPath());
+                    for (int i = depth.first; i <= depth.second; i++) {
+                        this->m_result += WritePath(iter->GetPath(), i);
+                    }
+                    this->m_result += WriteData(*iter);
+
+                    curPath = iter->GetPath();
+
+                    dataVec.erase(iter);
+                    --iter;
+                    break;
+
+                case ePathType::Same:
+                    this->m_result += WriteData(*iter);
+
+                    dataVec.erase(iter);
+                    --iter;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        DelComma(&this->m_result);
+        if (curPath != _ROOT_) {
+            this->m_result += ClosePath(curPath);
+        }
+        ToUpperPath(&curPath);
     }
 
-    // auto dataVec = this->m_dataVec;
-    // std::string work = std::get<0>(*dataVec.begin());
-    // for (auto iter = dataVec.begin(); iter != dataVec.end(); iter++) {
-    //     auto type = GetPathType(work, std::get<0>(*iter));
-    //     switch (type) {
-    //         case ePathType::Lower:
-    //             break;
-
-    //         case ePathType::Same:
-    //             break;
-
-    //         default:
-    //             break;
-    //     }
-    // }
-
+    this->m_result += "}";
     return this->m_result;
 }
 
@@ -51,24 +65,6 @@ json& json::operator[](const std::string& _path) {
     }
 
     return *this;
-}
-
-void json::operator=(int _param) {
-    if (this->m_path == "") return;
-
-    std::pair<std::string, std::string> pStr;
-    pStr = SeparateDataFromPath(this->m_path);
-    if (pStr.first == "" && pStr.second == "") return;
-
-    auto data = LookupData(pStr.first, pStr.second);
-    if (!data) {
-        this->m_dataVec.push_back(
-            std::make_tuple(pStr.first, pStr.second, std::to_string(_param)));
-    } else {
-        *data = std::to_string(_param);
-    }
-
-    this->m_path = "";
 }
 
 std::pair<std::string, std::string> json::SeparateDataFromPath(
@@ -91,18 +87,18 @@ std::pair<std::string, std::string> json::SeparateDataFromPath(
     return {result1, result2};
 }
 
-std::string* json::LookupData(const std::string& _path,
-                              const std::string& _name) {
+std::vector<std::string>* json::LookupData(const std::string& _path,
+                                           const std::string& _name) {
     if (_path == "" || _name == "") return nullptr;
 
     for (auto& elem : this->m_dataVec) {
         std::string path, name;
-        path = std::get<0>(elem);
-        name = std::get<1>(elem);
+        path = elem.GetPath();
+        name = elem.GetName();
 
         if (path == _path && name == _name) {
-            std::string* data;
-            data = &std::get<2>(elem);
+            std::vector<std::string>* data;
+            data = elem.pGetData();
             return data;
         }
     }
@@ -146,51 +142,68 @@ std::vector<std::string> json::UnpackPath(const std::string& _path) {
     return pathVec;
 }
 
-std::string json::WritePath(const std::string& _path) {
+std::string json::PackPath(const std::vector<std::string>& _path) {
+    if (_path.size() == 0) return "";
+
     std::string result = "";
-    if (_path == "") return result;
-
-    auto pathVec = UnpackPath(_path);
-    uint32_t depth = pathVec.size();
-
-    if (pathVec.size() == 0) return result;
-
-    std::string space = "";
-    for (int i = 0; i < _INDENT_; i++) {
-        space += " ";
+    for (auto iter = _path.begin(); iter != _path.end(); iter++) {
+        result += *iter + _PATHDIV_;
     }
 
-    std::vector<std::string> indent(pathVec.size(), "");
-    for (int i = 1; i < indent.size(); i++) {
-        indent[i] = indent[i - 1] + space;
-    }
-
-    for (uint32_t i = 1; i < depth; i++) {
-        result += indent[i] + "\"" + pathVec[i] + "\": {\n";
+    auto pos = result.rfind(_PATHDIV_);
+    if (pos != std::string::npos) {
+        result.erase(pos, result.length());
     }
 
     return result;
 }
 
-std::string json::WriteData(
-    const std::tuple<std::string, std::string, std::string>& _data) {
-    std::string path = std::get<0>(_data);
-    std::string name = std::get<1>(_data);
-    std::string data = std::get<2>(_data);
+std::string json::WritePath(const std::string& _path, const uint32_t& _depth) {
+    if (_path == "") return "";
+
+    auto pathVec = UnpackPath(_path);
+    if (pathVec.size() == 0) return "";
+
+    auto indent = GetIndent(_path, eIndentType::WritePath, _depth);
+    if (indent == "") return "";
+
+    std::string result = "";
+    result += indent + "\"" + pathVec[_depth] + "\": {\n";
+
+    return result;
+}
+
+std::string json::WriteData(Data _data) {
+    std::string path = _data.GetPath();
+    std::string name = _data.GetName();
+    std::vector<std::string> data = _data.GetData();
+
+    assert(data.size() > 0);
 
     if (path == "" || name == "") return "";
 
-    auto pathVec = UnpackPath(path);
-    if (pathVec.size() == 0) return "";
-
-    std::string indent = "";
-    auto size = _INDENT_ * pathVec.size();
-    for (int i = 0; i < size; i++) {
-        indent += " ";
-    }
-
     std::string result = "";
-    result += indent + "\"" + name + "\": " + data + ",\n";
+    if (data.size() == 1) {
+        auto indent = GetIndent(path, eIndentType::WriteData);
+        if (indent == "") return "";
+
+        result += indent + "\"" + name + "\": " + *data.begin() + ",\n";
+    } else {
+        auto arrIndent = GetIndent(path, eIndentType::WriteData);
+        if (arrIndent == "") return "";
+
+        auto dataIndent = GetIndent(path, eIndentType::WriteArr);
+        if (dataIndent == "") return "";
+
+        result += arrIndent + "\"" + name + "\": [\n";
+        for (const auto& elem : data) {
+            result += dataIndent + elem + ",\n";
+        }
+        result.erase(result.end() - 1);
+        result.erase(result.end() - 1);
+        result += "\n";
+        result += arrIndent + "],\n";
+    }
 
     return result;
 }
@@ -198,16 +211,8 @@ std::string json::WriteData(
 std::string json::ClosePath(const std::string& _path) {
     if (_path == "") return "";
 
-    auto pathVec = UnpackPath(_path);
-    if (pathVec.size() == 0 || pathVec.size() == 1) return "";
-
-    assert(pathVec.size() > 1);
-
-    std::string indent = "";
-    auto size = _INDENT_ * (pathVec.size() - 1);
-    for (int i = 0; i < size; i++) {
-        indent += " ";
-    }
+    auto indent = GetIndent(_path, eIndentType::Close);
+    if (indent == "") return "";
 
     std::string result = "";
     result += indent + "},\n";
@@ -219,4 +224,84 @@ void json::DelComma(std::string* _src) {
     _src->erase(_src->end() - 1);
     _src->erase(_src->end() - 1);
     *_src += "\n";
+}
+
+std::string json::GetIndent(const std::string& _path, eIndentType _type,
+                            const uint32_t& _depth) {
+    if (_path == "") return "";
+
+    std::string result = "";
+    auto pathVec = UnpackPath(_path);
+    auto size = pathVec.size();
+
+    assert(size > 0);
+
+    switch (_type) {
+        case eIndentType::WritePath:
+            if (_depth == 0) {
+                assert(size > 1);
+                size = (size - 1) * _INDENT_;
+            } else {
+                assert(size > 1 && _depth > 0);
+                size = _depth * _INDENT_;
+            }
+            break;
+
+        case eIndentType::WriteData:
+            size = size * _INDENT_;
+            break;
+
+        case eIndentType::WriteArr:
+            size = (size + 1) * _INDENT_;
+            break;
+
+        case eIndentType::Close:
+            assert(size > 1);
+            size = (size - 1) * _INDENT_;
+            break;
+    }
+
+    for (int i = 0; i < size; i++) {
+        result += " ";
+    }
+
+    return result;
+}
+
+std::pair<uint32_t, uint32_t> json::GetWriteDepth(const std::string& _prev,
+                                                  const std::string& _new) {
+    if (_prev == "" || _new == "") return {0, 0};
+
+    if (_prev == _new) return {0, 0};
+
+    auto prevVec = UnpackPath(_prev);
+    if (prevVec.size() == 0) return {0, 0};
+
+    auto newVec = UnpackPath(_new);
+    if (newVec.size() == 0) return {0, 0};
+
+    uint32_t result = 0;
+    auto prev = *(prevVec.end() - 1);
+    for (int i = 0; i < newVec.size(); i++) {
+        if (newVec[i] == prev) {
+            result = i;
+        }
+    }
+
+    return {result + 1, newVec.size() - 1};
+}
+
+void json::ToUpperPath(std::string* _path) {
+    if (!_path) return;
+
+    if (*_path == "") return;
+
+    if (*_path == _ROOT_) {
+        *_path = "";
+        return;
+    }
+
+    auto pathVec = UnpackPath(*_path);
+    pathVec.erase(pathVec.end() - 1);
+    *_path = PackPath(pathVec);
 }

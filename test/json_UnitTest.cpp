@@ -7,10 +7,106 @@
 TEST_CASE("json::operator std::string()", "[json::operator std::string()]") {
     logger_info("Unit testing... json::operator std::string()");
 
-    json test;
-    test["section1"]["section2"]["myData"] = 1;
-    std::string strTest = static_cast<std::string>(test);
-    logger_info("\n{}", strTest);
+    {
+        json test;
+        test["myData"] = 1;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": 1
+        // }
+        REQUIRE(r == "{\n    \"myData\": 1\n}");
+    }
+    {
+        json test;
+        test["section1"]["myData"] = 1;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "section1": {
+        //         "myData": 1
+        //     }
+        // }
+        REQUIRE(r == "{\n    \"section1\": {\n        \"myData\": 1\n    }\n}");
+    }
+    {
+        json test;
+        test["section1"]["myData"] = 1;
+        test["section1"]["myData"] = 10;
+        test["myData2"] = 2;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "section1": {
+        //         "myData": 10
+        //     },
+        //     "myData2": 2
+        // }
+        REQUIRE(r ==
+                "{\n    \"section1\": {\n        \"myData\": 10\n    },\n    "
+                "\"myData2\": 2\n}");
+    }
+    {
+        json test;
+        test["myData"] = 1;
+        test["section1"]["myData2"] = 2;
+        test["myData3"] = 3;
+        test["section1"]["myData4"] = 4;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": 1,
+        //     "section1": {
+        //         "myData2": 2,
+        //         "myData4": 4
+        //     },
+        //     "myData3": 3
+        // }
+        REQUIRE(
+            r ==
+            "{\n    \"myData\": 1,\n    \"section1\": {\n        \"myData2\": "
+            "2,\n        \"myData4\": 4\n    },\n    \"myData3\": 3\n}");
+    }
+    {
+        json test;
+        test["myData"] = 1;
+        test["section1"]["myData2"] = 2;
+        test["myData3"] = 3;
+        test["section1"]["section2"]["myData4"] = 4;
+        test["section1"]["myData5"] = 5;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": 1,
+        //     "section1": {
+        //         "myData2": 2,
+        //         "section2": {
+        //             "myData4": 4
+        //         },
+        //         "myData5": 5
+        //     },
+        //     "myData3": 3
+        // }
+        REQUIRE(
+            r ==
+            "{\n    \"myData\": 1,\n    \"section1\": {\n        \"myData2\": "
+            "2,\n        \"section2\": {\n            \"myData4\": 4\n        "
+            "},\n        \"myData5\": 5\n    },\n    \"myData3\": 3\n}");
+    }
+    {
+        json test;
+        int arr[2] = {0, 1};
+        test["myData"] = arr;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": [
+        //         0,
+        //         1
+        //     ]
+        // }
+        REQUIRE(r == "{\n    \"myData\": [\n        0,\n        1\n    ]\n}");
+    }
 }
 
 TEST_CASE("json::operator[]", "[json::operator array]") {
@@ -66,18 +162,22 @@ TEST_CASE("json::Lookupdata", "[json::Lookupdata]") {
 
     {
         json test;
+        std::vector<std::string> rData(1, "1");
+        Data tData("root", "myData", rData);
         auto& dataVec = test.GetDataVec_TEST();
-        dataVec.push_back(std::make_tuple("root", "myData", "1"));
+        dataVec.push_back(tData);
         auto data = test.LookupData("root", "myData2");
         REQUIRE(data == nullptr);
     }
     {
         json test;
+        std::vector<std::string> rData(1, "1");
+        Data tData("root", "myData", rData);
         auto& dataVec = test.GetDataVec_TEST();
-        dataVec.push_back(std::make_tuple("root", "myData", "1"));
+        dataVec.push_back(tData);
         auto data = test.LookupData("root", "myData");
-        *data = "2";
-        REQUIRE(std::get<2>(dataVec[0]) == "2");
+        *data->begin() = "2";
+        REQUIRE(*dataVec.begin()->GetData().begin() == "2");
     }
 }
 
@@ -157,6 +257,27 @@ TEST_CASE("json::UnpackPath", "[json::UnpackPath]") {
     }
 }
 
+TEST_CASE("json::PackPath", "[json::PackPath]") {
+    logger_info("Unit testing... json::PackPath");
+
+    json test;
+    std::string DIV = test.GetDiv_TEST();
+
+    {
+        std::vector<std::string> pathVec;
+        pathVec.push_back("root");
+        auto r = test.PackPath(pathVec);
+        REQUIRE(r == "root");
+    }
+    {
+        std::vector<std::string> pathVec;
+        pathVec.push_back("root");
+        pathVec.push_back("section1");
+        auto r = test.PackPath(pathVec);
+        REQUIRE(r == "root" + DIV + "section1");
+    }
+}
+
 TEST_CASE("json::WritePath", "[json::WritePath]") {
     logger_info("Unit testing... json::WritePath");
 
@@ -164,19 +285,18 @@ TEST_CASE("json::WritePath", "[json::WritePath]") {
     std::string path;
     std::string ROOT = test.GetRoot_TEST();
     std::string DIV = test.GetDiv_TEST();
-    std::string SPACE = "";
-    for (int i = 0; i < test.GetIndent_TEST(); i++) SPACE += " ";
 
     {
         path = ROOT + DIV + "section1";
-        auto r = test.WritePath(path);
-        REQUIRE(r == SPACE + "\"section1\": {\n");
+        auto r = test.WritePath(path, 1);
+        REQUIRE(r == "    \"section1\": {\n");
     }
     {
         path = ROOT + DIV + "section1" + DIV + "section2";
-        auto r = test.WritePath(path);
-        REQUIRE(r == SPACE + "\"section1\": {\n" + SPACE + SPACE +
-                         "\"section2\": {\n");
+        auto r1 = test.WritePath(path, 1);
+        auto r2 = test.WritePath(path, 2);
+        REQUIRE(r1 == "    \"section1\": {\n");
+        REQUIRE(r2 == "        \"section2\": {\n");
     }
 }
 
@@ -184,25 +304,24 @@ TEST_CASE("json::WriteData", "[json::WriteData]") {
     logger_info("Unit testing... json::WriteData");
 
     json test;
-    std::string path, name, data;
+    std::string path, name;
     std::string ROOT = test.GetRoot_TEST();
     std::string DIV = test.GetDiv_TEST();
-    std::string SPACE = "";
-    for (int i = 0; i < test.GetIndent_TEST(); i++) SPACE += " ";
-
     {
         path = ROOT;
         name = "myData";
-        data = "1";
-        auto r = test.WriteData(std::make_tuple(path, name, data));
-        REQUIRE(r == SPACE + "\"myData\": 1,\n");
+        std::vector<std::string> rData(1, "1");
+        Data tData(path, name, rData);
+        auto r = test.WriteData(tData);
+        REQUIRE(r == "    \"myData\": 1,\n");
     }
     {
         path = ROOT + DIV + "section1";
         name = "myData";
-        data = "1";
-        auto r = test.WriteData(std::make_tuple(path, name, data));
-        REQUIRE(r == SPACE + SPACE + "\"myData\": 1,\n");
+        std::vector<std::string> rData(1, "1");
+        Data tData(path, name, rData);
+        auto r = test.WriteData(tData);
+        REQUIRE(r == "        \"myData\": 1,\n");
     }
 }
 
@@ -213,18 +332,19 @@ TEST_CASE("json::ClosePath", "[json::ClosePath]") {
     std::string path, name, data;
     std::string ROOT = test.GetRoot_TEST();
     std::string DIV = test.GetDiv_TEST();
-    std::string SPACE = "";
-    for (int i = 0; i < test.GetIndent_TEST(); i++) SPACE += " ";
+    std::string INDENT;
 
     {
         path = ROOT + DIV + "section1";
+        INDENT = test.GetIndent(path, json::eIndentType::Close);
         auto r = test.ClosePath(path);
-        REQUIRE(r == SPACE + "},\n");
+        REQUIRE(r == INDENT + "},\n");
     }
     {
         path = ROOT + DIV + "section1" + DIV + "section2";
+        INDENT = test.GetIndent(path, json::eIndentType::Close);
         auto r = test.ClosePath(path);
-        REQUIRE(r == SPACE + SPACE + "},\n");
+        REQUIRE(r == INDENT + "},\n");
     }
 }
 
@@ -246,6 +366,88 @@ TEST_CASE("json::DelComma", "[json::DelComma]") {
     }
 }
 
+TEST_CASE("json::GetIndent", "[json::GetIndent]") {
+    logger_info("Unit testing... json::GetIndent");
+
+    json test;
+    std::string path, indent;
+    std::string DIV = test.GetDiv_TEST();
+
+    {
+        path = "root";
+        REQUIRE(test.GetIndent(path, json::eIndentType::WriteData) == "    ");
+        REQUIRE(test.GetIndent(path, json::eIndentType::WriteArr) ==
+                "        ");
+    }
+    {
+        path = "root" + DIV + "section1";
+        REQUIRE(test.GetIndent(path, json::eIndentType::WritePath) == "    ");
+        REQUIRE(test.GetIndent(path, json::eIndentType::WriteData) ==
+                "        ");
+        REQUIRE(test.GetIndent(path, json::eIndentType::WriteArr) ==
+                "            ");
+        REQUIRE(test.GetIndent(path, json::eIndentType::Close) == "    ");
+    }
+}
+
+TEST_CASE("json::GetWriteDepth", "[json::GetWriteDepth]") {
+    logger_info("Unit testing... json::GetWriteDepth");
+
+    json test;
+    std::string prevPath, newPath;
+    std::string DIV = test.GetDiv_TEST();
+
+    {
+        prevPath = "root";
+        newPath = "root" + DIV + "section1";
+        auto r = test.GetWriteDepth(prevPath, newPath);
+        REQUIRE((r.first == 1 && r.second == 1));
+    }
+    {
+        prevPath = "root" + DIV + "section1";
+        newPath = "root" + DIV + "section1" + DIV + "section2";
+        auto r = test.GetWriteDepth(prevPath, newPath);
+        REQUIRE((r.first == 2 && r.second == 2));
+    }
+    {
+        prevPath = "root";
+        newPath = "root" + DIV + "section1" + DIV + "section2";
+        auto r = test.GetWriteDepth(prevPath, newPath);
+        REQUIRE((r.first == 1 && r.second == 2));
+    }
+    {
+        prevPath = "root";
+        newPath = "root";
+        auto r = test.GetWriteDepth(prevPath, newPath);
+        REQUIRE((r.first == 0 && r.second == 0));
+    }
+}
+
+TEST_CASE("json::ToUpperPath", "[json::ToUpperPath]") {
+    logger_info("Unit testing... json::ToUpperPath");
+
+    json test;
+    std::string path;
+    std::string ROOT = test.GetRoot_TEST();
+    std::string DIV = test.GetDiv_TEST();
+
+    {
+        path = ROOT;
+        test.ToUpperPath(&path);
+        REQUIRE(path == "");
+    }
+    {
+        path = "root" + DIV + "section1";
+        test.ToUpperPath(&path);
+        REQUIRE(path == "root");
+    }
+    {
+        path = "root" + DIV + "section1" + DIV + "section2";
+        test.ToUpperPath(&path);
+        REQUIRE(path == "root" + DIV + "section1");
+    }
+}
+
 TEST_CASE("json::operator=", "[json::operator=]") {
     logger_info("Unit testing... json::operator=");
 
@@ -253,28 +455,27 @@ TEST_CASE("json::operator=", "[json::operator=]") {
     std::string ROOT = test.GetRoot_TEST();
     std::string DIV = test.GetDiv_TEST();
 
-    std::tuple<std::string, std::string, std::string> elem;
-    std::string path, name, data;
+    std::string path, name;
 
     test["myData"] = 1;
-    elem = test.GetDataVec_TEST()[0];
-    path = std::get<0>(elem);
-    name = std::get<1>(elem);
-    data = std::get<2>(elem);
-    REQUIRE((path == ROOT && name == "myData" && data == "1"));
+    Data tData1 = test.GetDataVec_TEST()[0];
+    path = tData1.GetPath();
+    name = tData1.GetName();
+    std::vector<std::string> rData1 = tData1.GetData();
+    REQUIRE((path == ROOT && name == "myData" && rData1[0] == "1"));
 
     test["myData"] = 2;
-    elem = test.GetDataVec_TEST()[0];
-    path = std::get<0>(elem);
-    name = std::get<1>(elem);
-    data = std::get<2>(elem);
-    REQUIRE((path == ROOT && name == "myData" && data == "2"));
+    Data tData2 = test.GetDataVec_TEST()[0];
+    path = tData2.GetPath();
+    name = tData2.GetName();
+    std::vector<std::string> rData2 = tData2.GetData();
+    REQUIRE((path == ROOT && name == "myData" && rData2[0] == "2"));
 
     test["section1"]["myData"] = 1;
-    elem = test.GetDataVec_TEST()[1];
-    path = std::get<0>(elem);
-    name = std::get<1>(elem);
-    data = std::get<2>(elem);
-    REQUIRE(
-        (path == ROOT + DIV + "section1" && name == "myData" && data == "1"));
+    Data tData3 = test.GetDataVec_TEST()[1];
+    path = tData3.GetPath();
+    name = tData3.GetName();
+    std::vector<std::string> rData3 = tData3.GetData();
+    REQUIRE((path == ROOT + DIV + "section1" && name == "myData" &&
+             rData3[0] == "1"));
 }
