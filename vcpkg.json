@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "jsonparser",
+  "version-string": "1.0.0",
+  "port-version": 0,
+  "description": "jsonparser.",
+  "license": "MIT",
+  "dependencies": [
+    "spdlog",
+    "catch2"
+  ]
+}
