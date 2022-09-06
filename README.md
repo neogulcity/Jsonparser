@@ -1,48 +1,47 @@
 # jsonparser
 C++ Json 라이브러리
 
-## Requirements
+## Build Requirements
 * [CMake](https://cmake.org/)
+* [Catch2](https://github.com/catchorg/Catch2/)
 * [spdlog](https://github.com/gabime/spdlog/)
 
 ## Example
-```json
-{
-    "number": 10,
-    "account": {
-        "id": 1
-    }
-}
-```
-
 ```cpp
 // main.cpp
-
-#include <jsonparer/jsonparser.h>
-using namespace jsonparser
+#include <fstream>
+#include "jsonparer/jsonparser.h"
 
 int main()
 {
-    json jsonfile("example.json");
-    int i = jsonfile.get("number");
-    std::cout << i << std::endl;
+    json config;
 
-    int j = jsonfile.get("account/id");
-    std::cout << j;
+    config["myData"] = 10;
+
+    int arr[3] = {1, 2, 3};
+    config["myArray"] = arr;
+
+    config["Section1"]["myData2"] = "Hello!";
+
+    std::string outString = static_cast<std::string>(config);
+    std::ofstream out("config.json");
+    out << outString;
+    out.close();
+
     return 0;
 }
 ```
-
 ## Result
+```json
+{
+    "myData": 10,
+    "myArray": [
+        1,
+        2,
+        3
+    ],
+    "Section1": {
+        "myData2": "Hello!"
+    }
+}
 ```
-10
-1
-```
-
-## Function List
-jsonparser::jsonparser(string a_filename)  
-T jsonparser::get()  
-void jsonparser::AddPath(string ...)  
-void jsonparser::DelPath()  
-void jsonparser::Serialize(T param)
-void jsonparser::Write(string a_filename)
