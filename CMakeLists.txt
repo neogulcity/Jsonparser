@@ -52,6 +52,8 @@ if (${unitTest})
         ${srcPath}/jsonparser.cpp
         ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
+        ${srcPath}/json.hpp
+        ${srcPath}/Data.cpp
         ${testPath}/json_UnitTest.cpp
     )
 else ()
@@ -60,6 +62,8 @@ else ()
         ${srcPath}/jsonparser.cpp
         ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
+        ${srcPath}/json.hpp
+        ${srcPath}/Data.cpp
     )
 endif ()
 
@@ -72,9 +76,9 @@ target_include_directories(
 
 # Link spdlog and Catch2.
 target_link_libraries(
-	${PROJECT_NAME}
-	PRIVATE
-	spdlog::spdlog_header_only
+    ${PROJECT_NAME}
+    PRIVATE
+    spdlog::spdlog_header_only
     Catch2::Catch2
 )
 
