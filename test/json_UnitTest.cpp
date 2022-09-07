@@ -1,5 +1,9 @@
-#include "json.h"
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "json.h"
 #include "Log.h"
 #include "catch2/catch_template_test_macros.hpp"
 #include "catch2/catch_test_macros.hpp"
@@ -16,6 +20,27 @@ TEST_CASE("json::operator std::string()", "[json::operator std::string()]") {
         //     "myData": 1
         // }
         REQUIRE(r == "{\n    \"myData\": 1\n}");
+    }
+    {
+        json test;
+        test["myData"] = "hello";
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": "hello"
+        // }
+        REQUIRE(r == "{\n    \"myData\": \"hello\"\n}");
+    }
+    {
+        json test;
+        std::string text = "hello";
+        test["myData"] = text;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": "hello"
+        // }
+        REQUIRE(r == "{\n    \"myData\": \"hello\"\n}");
     }
     {
         json test;
@@ -107,6 +132,68 @@ TEST_CASE("json::operator std::string()", "[json::operator std::string()]") {
         // }
         REQUIRE(r == "{\n    \"myData\": [\n        0,\n        1\n    ]\n}");
     }
+    {
+        json test;
+        std::string arr[2] = {"hello", "world"};
+        test["myData"] = arr;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": [
+        //         "hello",
+        //         "world"
+        //     ]
+        // }
+        REQUIRE(r ==
+                "{\n    \"myData\": [\n        \"hello\",\n        \"world\"\n "
+                "   ]\n}");
+    }
+    {
+        json test;
+        std::vector<int> arr = {0, 1};
+        test["myData"] = arr;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": [
+        //         0,
+        //         1
+        //     ]
+        // }
+        REQUIRE(r == "{\n    \"myData\": [\n        0,\n        1\n    ]\n}");
+    }
+    {
+        json test;
+        std::vector<std::string> arr = {"hello", "world"};
+        test["myData"] = arr;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": [
+        //         "hello",
+        //         "world"
+        //     ]
+        // }
+        REQUIRE(r ==
+                "{\n    \"myData\": [\n        \"hello\",\n        \"world\"\n "
+                "   ]\n}");
+    }
+    {
+        json test;
+        std::vector<const char*> arr = {"hello", "world"};
+        test["myData"] = arr;
+        auto r = static_cast<std::string>(test);
+
+        // {
+        //     "myData": [
+        //         "hello",
+        //         "world"
+        //     ]
+        // }
+        REQUIRE(r ==
+                "{\n    \"myData\": [\n        \"hello\",\n        \"world\"\n "
+                "   ]\n}");
+    }
 }
 
 TEST_CASE("json::operator[]", "[json::operator array]") {
@@ -163,7 +250,7 @@ TEST_CASE("json::Lookupdata", "[json::Lookupdata]") {
     {
         json test;
         std::vector<std::string> rData(1, "1");
-        Data tData("root", "myData", rData);
+        jsonvalue::Data tData("root", "myData", rData);
         auto& dataVec = test.GetDataVec_TEST();
         dataVec.push_back(tData);
         auto data = test.LookupData("root", "myData2");
@@ -172,7 +259,7 @@ TEST_CASE("json::Lookupdata", "[json::Lookupdata]") {
     {
         json test;
         std::vector<std::string> rData(1, "1");
-        Data tData("root", "myData", rData);
+        jsonvalue::Data tData("root", "myData", rData);
         auto& dataVec = test.GetDataVec_TEST();
         dataVec.push_back(tData);
         auto data = test.LookupData("root", "myData");
@@ -311,7 +398,7 @@ TEST_CASE("json::WriteData", "[json::WriteData]") {
         path = ROOT;
         name = "myData";
         std::vector<std::string> rData(1, "1");
-        Data tData(path, name, rData);
+        jsonvalue::Data tData(path, name, rData);
         auto r = test.WriteData(tData);
         REQUIRE(r == "    \"myData\": 1,\n");
     }
@@ -319,7 +406,7 @@ TEST_CASE("json::WriteData", "[json::WriteData]") {
         path = ROOT + DIV + "section1";
         name = "myData";
         std::vector<std::string> rData(1, "1");
-        Data tData(path, name, rData);
+        jsonvalue::Data tData(path, name, rData);
         auto r = test.WriteData(tData);
         REQUIRE(r == "        \"myData\": 1,\n");
     }
@@ -458,21 +545,21 @@ TEST_CASE("json::operator=", "[json::operator=]") {
     std::string path, name;
 
     test["myData"] = 1;
-    Data tData1 = test.GetDataVec_TEST()[0];
+    jsonvalue::Data tData1 = test.GetDataVec_TEST()[0];
     path = tData1.GetPath();
     name = tData1.GetName();
     std::vector<std::string> rData1 = tData1.GetData();
     REQUIRE((path == ROOT && name == "myData" && rData1[0] == "1"));
 
     test["myData"] = 2;
-    Data tData2 = test.GetDataVec_TEST()[0];
+    jsonvalue::Data tData2 = test.GetDataVec_TEST()[0];
     path = tData2.GetPath();
     name = tData2.GetName();
     std::vector<std::string> rData2 = tData2.GetData();
     REQUIRE((path == ROOT && name == "myData" && rData2[0] == "2"));
 
     test["section1"]["myData"] = 1;
-    Data tData3 = test.GetDataVec_TEST()[1];
+    jsonvalue::Data tData3 = test.GetDataVec_TEST()[1];
     path = tData3.GetPath();
     name = tData3.GetName();
     std::vector<std::string> rData3 = tData3.GetData();
