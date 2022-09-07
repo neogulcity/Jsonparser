@@ -1,6 +1,11 @@
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "json.h"
 
-#include "Log.h"
+using namespace jsonvalue;
 
 std::ostream& operator<<(std::ostream& _out, const json& _json) {
     _out << _json.m_result;
@@ -17,31 +22,31 @@ json::operator std::string() {
     auto dataVec = this->m_dataVec;
     std::string curPath = _ROOT_;
     while (curPath != "") {
-        for (auto iter = dataVec.begin(); iter != dataVec.end(); iter++) {
+        auto iter = dataVec.begin();
+        while (iter != dataVec.end()) {
             auto type = GetPathType(curPath, iter->GetPath());
             std::pair<uint32_t, uint32_t> depth;
             switch (type) {
                 case ePathType::Lower:
                     depth = GetWriteDepth(curPath, iter->GetPath());
-                    for (int i = depth.first; i <= depth.second; i++) {
+                    for (uint32_t i = depth.first; i <= depth.second; i++) {
                         this->m_result += WritePath(iter->GetPath(), i);
                     }
                     this->m_result += WriteData(*iter);
 
                     curPath = iter->GetPath();
 
-                    dataVec.erase(iter);
-                    --iter;
+                    iter = dataVec.erase(iter);
                     break;
 
                 case ePathType::Same:
                     this->m_result += WriteData(*iter);
 
-                    dataVec.erase(iter);
-                    --iter;
+                    iter = dataVec.erase(iter);
                     break;
 
                 default:
+                    iter++;
                     break;
             }
         }
@@ -55,6 +60,117 @@ json::operator std::string() {
 
     this->m_result += "}";
     return this->m_result;
+}
+
+void json::operator=(const std::string& _param) {
+    if (this->m_path == "") return;
+
+    std::pair<std::string, std::string> pStr;
+    pStr = SeparateDataFromPath(this->m_path);
+    if (pStr.first == "" && pStr.second == "") return;
+
+    std::string param = "\"" + _param + "\"";
+
+    auto data = LookupData(pStr.first, pStr.second);
+    if (!data) {
+        std::vector<std::string> dataVec(1, param);
+        Data newData(pStr.first, pStr.second, dataVec);
+        this->m_dataVec.push_back(newData);
+    } else {
+        std::vector<std::string> dataVec(1, param);
+        *data = dataVec;
+    }
+
+    this->m_path = "";
+}
+
+void json::operator=(const char* _param) {
+    if (this->m_path == "") return;
+
+    if (!_param) return;
+
+    std::pair<std::string, std::string> pStr;
+    pStr = SeparateDataFromPath(this->m_path);
+    if (pStr.first == "" && pStr.second == "") return;
+
+    std::string param(_param);
+    param = "\"" + param + "\"";
+
+    auto data = LookupData(pStr.first, pStr.second);
+    if (!data) {
+        std::vector<std::string> dataVec(1, param);
+        Data newData(pStr.first, pStr.second, dataVec);
+        this->m_dataVec.push_back(newData);
+    } else {
+        std::vector<std::string> dataVec(1, param);
+        *data = dataVec;
+    }
+
+    this->m_path = "";
+}
+
+void json::operator=(const std::vector<std::string>& _param) {
+    if (this->m_path == "") return;
+
+    if (_param.size() == 0) return;
+
+    std::pair<std::string, std::string> pStr;
+    pStr = SeparateDataFromPath(this->m_path);
+    if (pStr.first == "" && pStr.second == "") return;
+
+    auto data = LookupData(pStr.first, pStr.second);
+    if (!data) {
+        std::vector<std::string> dataVec;
+        for (const auto& elem : _param) {
+            std::string param = elem;
+            param = "\"" + param + "\"";
+            dataVec.push_back(param);
+        }
+        Data newData(pStr.first, pStr.second, dataVec);
+        this->m_dataVec.push_back(newData);
+    } else {
+        std::vector<std::string> dataVec;
+        for (const auto& elem : _param) {
+            std::string param = elem;
+            param = "\"" + param + "\"";
+            dataVec.push_back(param);
+        }
+        *data = dataVec;
+    }
+
+    this->m_path = "";
+}
+
+void json::operator=(const std::vector<const char*>& _param) {
+    if (this->m_path == "") return;
+
+    if (_param.size() == 0) return;
+
+    std::pair<std::string, std::string> pStr;
+    pStr = SeparateDataFromPath(this->m_path);
+    if (pStr.first == "" && pStr.second == "") return;
+
+    auto data = LookupData(pStr.first, pStr.second);
+    if (!data) {
+        std::vector<std::string> dataVec;
+        for (const auto& elem : _param) {
+            std::string param(elem);
+            param = "\"" + param + "\"";
+            dataVec.push_back(param);
+        }
+        Data newData(pStr.first, pStr.second, dataVec);
+        this->m_dataVec.push_back(newData);
+    } else {
+        std::vector<std::string> dataVec;
+        for (const auto& elem : _param) {
+            std::string param(elem);
+            param = "\"" + param + "\"";
+            dataVec.push_back(param);
+        }
+        *data = dataVec;
+    }
+
+    this->m_path = "";
 }
 
 json& json::operator[](const std::string& _path) {
