@@ -17,4 +17,4 @@ namespace logger {
 
     // spdlog 디버그 로그 활성화.
     void InitializeLogging();
-}  // namespace log
+}
