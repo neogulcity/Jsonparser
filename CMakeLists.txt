@@ -46,13 +46,12 @@ endif ()
 # Make library file.
 message(STATUS "Unit Testing set to '${unitTest}'")
 if (${unitTest})
-    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "_TEST")
+    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "JSONPARSER_TEST")
     add_executable(
         ${PROJECT_NAME}
         ${srcPath}/jsonparser.cpp
         ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
-        # ${srcPath}/json.hpp
         ${srcPath}/Data.cpp
         ${testPath}/json_UnitTest.cpp
     )
@@ -63,7 +62,6 @@ else ()
         ${srcPath}/jsonparser.cpp
         ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
-        # ${srcPath}/json.hpp
         ${srcPath}/Data.cpp
     )
 endif ()
@@ -87,20 +85,7 @@ target_link_libraries(
 target_compile_options(
     ${PROJECT_NAME}
     PRIVATE
-    -Wall
-    -Werror
 )
-
-# Set start project for Visual Studio.
-if (MSVC)
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-endif ()
-
-
-
-
-
-#### 이하 Cmake Install Library 관련 항목 #####
 
 if (${unitTest} STREQUAL false)
 # Making package
