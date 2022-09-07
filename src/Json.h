@@ -31,7 +31,7 @@ class json {
     void operator=(const std::vector<const char*>& _param);
 
 // For testing purpose functions
-#ifdef _TEST
+#ifdef JSONPARSER_TEST
    public:
     enum class ePathType { Same, Upper, Lower, Else };
     enum class eIndentType { WritePath, WriteData, WriteArr, Close };

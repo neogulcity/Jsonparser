@@ -1,7 +1,7 @@
 #include "Log.h"
 #include "json.h"
 
-#ifdef _TEST
+#ifdef JSONPARSER_TEST
 #include "catch2/catch_session.hpp"
 int main(int argc, char* argv[]) {
     logger::InitializeLogging();
