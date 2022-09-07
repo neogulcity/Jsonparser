@@ -8,8 +8,8 @@
 #define logger_debug(...) SPDLOG_DEBUG(__VA_ARGS__)
 #define logger_trace(...) SPDLOG_TRACE(__VA_ARGS__)
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 namespace logger {
     // 빌드 타입의 디버그 여부 반환.
