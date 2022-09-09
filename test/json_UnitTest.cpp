@@ -1,12 +1,7 @@
-#include <iostream>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "json.h"
 #include "Log.h"
-#include "catch2/catch_template_test_macros.hpp"
-#include "catch2/catch_test_macros.hpp"
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("json::operator std::string()", "[json::operator std::string()]") {
     logger_info("Unit testing... json::operator std::string()");
