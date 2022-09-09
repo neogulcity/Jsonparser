@@ -22,4 +22,4 @@ namespace logger {
         spdlog::set_default_logger(std::move(log));
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
     }
-}  // namespace logger
+}
