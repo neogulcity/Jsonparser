@@ -49,18 +49,16 @@ if (${unitTest})
     set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "JSONPARSER_TEST")
     add_executable(
         ${PROJECT_NAME}
-        ${srcPath}/jsonparser.cpp
+        ${testPath}/jsonparser_Main.cpp
         ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
         ${srcPath}/Data.cpp
-        ${testPath}/json_UnitTest.cpp
+        ${testPath}/Json_UnitTest.cpp
     )
 else ()
     add_library(
         ${PROJECT_NAME}
         STATIC
-        ${srcPath}/jsonparser.cpp
-        ${srcPath}/Log.cpp
         ${srcPath}/json.cpp
         ${srcPath}/Data.cpp
     )

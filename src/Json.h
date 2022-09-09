@@ -1,5 +1,11 @@
 #pragma once
 
+#include <cassert>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "Data.h"
 
 class json {
@@ -35,32 +41,125 @@ class json {
    public:
     enum class ePathType { Same, Upper, Lower, Else };
     enum class eIndentType { WritePath, WriteData, WriteArr, Close };
+
     std::string GetPath_TEST() { return this->m_path; }
     std::string GetRoot_TEST() { return this->_ROOT_; }
     std::string GetDiv_TEST() { return this->_PATHDIV_; }
     std::vector<jsonvalue::Data>& GetDataVec_TEST() { return this->m_dataVec; }
+
+    /**
+     * Separate the string to path and data name from given path.
+     *
+     * @param path The string to separate.
+     * @return pair<string, string> - The first is path and the second, data
+     * name.
+     */
     std::pair<std::string, std::string> SeparateDataFromPath(
         const std::string& _path);
+
+    /**
+     * Lookup the data in data member m_dataVec by given path and data name.
+     *
+     * @param path The string of path to lookup data.
+     * @param name The string of name to lookup data.
+     * @return vector<string>* - Address of the container which hold stringized
+     * data.
+     */
     std::vector<std::string>* LookupData(const std::string& _path,
                                          const std::string& _name);
+
+    /**
+     * Get "Path Type" from the Source string compared with given string.
+     *
+     * @param src The string of source to compare.
+     * @param toCompare The string to get Path Type.
+     * @return ePathType - The relation between given strings.
+     */
     ePathType GetPathType(const std::string& _src,
                           const std::string& _toCompare);
+
+    /**
+     * Unpack given string by path divider json::_PATHDIV_.
+     *
+     * @param path The string of path to unpack.
+     * @return vector<string> - The container of unpacked strings.
+     */
     std::vector<std::string> UnpackPath(const std::string& _path);
+
+    /**
+     * Pack given container of strings by path divider json::_PATHDIV_.
+     *
+     * @param path The container of strings to pack.
+     * @return string - The string packaged with path divider.
+     */
     std::string PackPath(const std::vector<std::string>& _path);
+
+    /**
+     * Write string of path from given depth.
+     *
+     * @param path The string of path to write.
+     * @param depth The number to write path.
+     * @return string - The string to write with json structure.
+     */
     std::string WritePath(const std::string& _path, const uint32_t& _depth);
+
+    /**
+     * Write stringized data from given Data class.
+     *
+     * @param data The data to write.
+     * @return string - The string to write with json structure.
+     */
     std::string WriteData(jsonvalue::Data _data);
+
+    /**
+     * Add end bracket to close given path.
+     *
+     * @param path The string of path to close.
+     * @return string - The string to write with json structure.
+     */
     std::string ClosePath(const std::string& _path);
+
+    /**
+     * Delete comma from given string to end writting data.
+     *
+     * @param path The string of source to delete comma.
+     */
     void DelComma(std::string* _src);
+
+    /**
+     * Get indent size of path by eIndentType and depth.
+     *
+     * @param path The string of path to get indent size.
+     * @param eIndentType The type of writing.
+     * @param depth The number to write path.
+     * @return string - The stringized indent.
+     */
     std::string GetIndent(const std::string& _path, eIndentType _type,
                           const uint32_t& _depth = 0);
+
+    /**
+     * Get paired depth to start writing path and end.
+     *
+     * @param prev The string of path previously written.
+     * @param new The string of path to write.
+     * @return pair<uint32_t, uint32_t> - The first is depth to start writing
+     * and the second, end of depth to write.
+     */
     std::pair<uint32_t, uint32_t> GetWriteDepth(const std::string& _prev,
                                                 const std::string& _new);
+
+    /**
+     * Move current path to it's parent.
+     *
+     * @param path The string of path to move upper.
+     */
     void ToUpperPath(std::string* _path);
 
 #else
    private:
     enum class ePathType { Same, Upper, Lower, Else };
     enum class eIndentType { WritePath, WriteData, WriteArr, Close };
+
     std::pair<std::string, std::string> SeparateDataFromPath(
         const std::string& _path);
     std::vector<std::string>* LookupData(const std::string& _path,
@@ -196,5 +295,3 @@ void json::operator=(const std::string (&arr)[N]) {
 
     this->m_path = "";
 }
-
-// #include "json.hpp"

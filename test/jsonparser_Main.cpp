@@ -29,10 +29,4 @@ int main(int argc, char* argv[]) {
     // You can also do any post run clean-up here
     return numFailed;
 }
-#else
-int main() {
-    logger::InitializeLogging();
-
-    return 0;
-}
 #endif
