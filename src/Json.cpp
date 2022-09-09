@@ -1,9 +1,3 @@
-#include <cassert>
-#include <iostream>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "json.h"
 
 using namespace jsonvalue;
@@ -20,6 +14,9 @@ json::operator std::string() {
 
     this->m_result += "{\n";
 
+    // Start of writting json format string. Start from root and Iterate all
+    // data in m_dataVec. While iterating data, check it's path and compare with
+    // current path.
     auto dataVec = this->m_dataVec;
     std::string curPath = _ROOT_;
     while (curPath != "") {
@@ -28,6 +25,8 @@ json::operator std::string() {
             auto type = GetPathType(curPath, iter->GetPath());
             std::pair<uint32_t, uint32_t> depth;
             switch (type) {
+                // The data located path is child of current path. So, write the
+                // path and data. Then move current path lower.
                 case ePathType::Lower:
                     depth = GetWriteDepth(curPath, iter->GetPath());
                     for (uint32_t i = depth.first; i <= depth.second; i++) {
@@ -40,6 +39,8 @@ json::operator std::string() {
                     iter = dataVec.erase(iter);
                     break;
 
+                // The data located in same path with current. So, write the
+                // data and keep searching next.
                 case ePathType::Same:
                     this->m_result += WriteData(*iter);
 
@@ -52,6 +53,9 @@ json::operator std::string() {
             }
         }
 
+        // Now, all the same path data written in current path. End writting
+        // data and close the path. Then move current path to upper and keep
+        // searching next data.
         DelComma(&this->m_result);
         if (curPath != _ROOT_) {
             this->m_result += ClosePath(curPath);
