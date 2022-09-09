@@ -12,9 +12,6 @@
 #include <spdlog/spdlog.h>
 
 namespace logger {
-    // 빌드 타입의 디버그 여부 반환.
     inline bool IsDebug();
-
-    // spdlog 디버그 로그 활성화.
     void InitializeLogging();
 }
