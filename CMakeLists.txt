@@ -24,8 +24,10 @@ set(srcPath ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(testPath ${CMAKE_CURRENT_SOURCE_DIR}/test)
 
 # Find spdlog and Catch2.
+if (${unitTest})
 find_package(spdlog CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
+endif()
 
 # Checking build type
 if (CMAKE_BUILD_TYPE STREQUAL "")
@@ -72,12 +74,14 @@ target_include_directories(
 )
 
 # Link spdlog and Catch2.
+if (${unitTest})
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
     spdlog::spdlog_header_only
     Catch2::Catch2
 )
+endif()
 
 # Compile options.
 target_compile_options(
